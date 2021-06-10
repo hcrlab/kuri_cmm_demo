@@ -8,9 +8,9 @@ from scipy.stats import multivariate_normal
 
 class ToSendPolicy(object):
     """
-    The ToSendPolicy class takes in an image messae, vectorizes it, and then 
-    determines whether or not to send it. It does so my maintaining a belief 
-    over the human preference for each human. It then takes in human 
+    The ToSendPolicy class takes in an image messae, vectorizes it, and then
+    determines whether or not to send it. It does so my maintaining a belief
+    over the human preference for each human. It then takes in human
     responses to the sent images, and updates the belief accordingly.
     """
     def __init__(self, sent_messages_database, classes_cache_filepath=None,
@@ -85,20 +85,18 @@ class ToSendPolicy(object):
 
     @staticmethod
     def image_to_context(img_vector):
-	"""
-	Converts an img_vector to a context vector that is used by the 
-	belief (BayesianLogisticRegression). It does so by prepending 
-	a 1 to the img_vector, to add an intercept term.
-	"""
+    	"""
+    	Converts an img_vector to a context vector that is used by the
+    	belief (BayesianLogisticRegression). It does so by prepending
+    	a 1 to the img_vector, to add an intercept term.
+    	"""
         return np.insert(img_vector, 0, 1., axis=0)
 
-    def to_send_policy(self, detected_objects_msg):
+    def to_send_policy(self, img_vector):
         """
         Returns a boolean vector of size self.n_humans to indicate whether or
         not to send an image to each human
         """
-        # Get the image vector
-        img_vector = self.vectorize(detected_objects_msg)
         # Add an intercept term to the image
         context = ToSendPolicy.image_to_context(img_vector)
 
@@ -114,7 +112,7 @@ class ToSendPolicy(object):
             if probability_of_liking > (self.human_send_penalty - self.human_dislike_reward)/(self.human_like_reward - self.human_dislike_reward):
                 to_send[human_i] = True
 
-        return to_send, img_vector
+        return to_send
 
     def got_reaction(self, user):
         """
