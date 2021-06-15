@@ -67,3 +67,4 @@ To test it, open another terminal session on this computer, navigate to `kuri_cm
 
 ## Notes
 - This Slackbot has only been tested with one user in the user list as of now.
+- TODO: add Slash Commands to the slackbot permission configuration section. And App Home.

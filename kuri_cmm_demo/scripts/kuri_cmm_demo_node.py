@@ -173,36 +173,60 @@ class CMMDemo(object):
             img_vector = self.to_send_policy.vectorize(detected_objects_msg)
             return img_vector
 
-    def send_image(self, img_msg):
+    def send_images(self, user, n_images=5):
         """
         Takes in an img_msg and sends it to the Slackbot
         """
-        img_vector = self.img_msg_to_img_vector(img_msg)
-        # Get a new message ID
-        local_msg_id = self.sent_messages_database.get_new_local_msg_id()
-        # Add this image to the database
-        rospy.loginfo("Send image! To users %s" % self.users_to_send_to_final)
-        self.sent_messages_database.add_message(
-            local_msg_id, img_msg, img_vector, self.users_to_send_to_final)
-        self.database_updated()
+        # Get the images the robot thinks the user is likely to like, and
+        # compute the likleihood that the user will like them
+        img_msgs, img_vectors, local_img_ids = self.sent_messages_database.get_stored_images_for_user(user)
+        probabilities = []
+        for img_vector in img_vectors:
+            probabilities.append(self.to_send_policy.get_probability(user, img_vector))
+
+        # Determine the images to send.
+        # TODO: make this not just take the 5 max, but also account for the
+        # difference amongst the 5 images selected
+        top_img_indices = np.argsort(probabilities)[-1:-n_images-1:-1]
+        selected_images = []
+        for i in top_img_indices:
+            img_msg = img_msgs[i]
+            content = bytearray(img_msg.data)
+            selected_images.append(base64.b64encode(content).decode('ascii'))
+
         # Send the image
-        content = bytearray(img_msg.data)
         send_image_data = {
-            'image' : base64.b64encode(content).decode('ascii'),
-            'users' : self.users_to_send_to_final,
+            'images' : selected_images,
+            'users' : user,
             # 'callback_url' : callback_url,
         }
         try:
-            res = requests.post(os.path.join(self.slackbot_url, 'send_image'), json=send_image_data)
-            slackbot_msg_id = res.json()["message_id"]
-            self.sent_messages_database.add_slackbot_message_id(local_msg_id, slackbot_msg_id)
+            res = requests.post(os.path.join(self.slackbot_url, 'send_images'), json=send_image_data)
+            slackbot_img_ids = res.json()["image_ids"]
+            self.sent_messages_database.add_slackbot_image_id(local_img_ids, slackbot_img_ids, user)
             self.database_updated()
         except Exception as e:
             rospy.logwarn("Error communicating with Slackbot /send_image at URL %s." % self.slackbot_url)
             rospy.logwarn("Response text %s." % res.text)
             rospy.logwarn(traceback.format_exc())
             rospy.logwarn("Error %s." % e)
-        self.state = CMMDemoState.NORMAL
+        with self.state_lock:
+            self.state = CMMDemoState.NORMAL
+
+    def store_image(self, img_msg):
+        """
+        Stores an image in the database as a potential image that the users in
+        self.users_to_send_to_final will like. When send_images is called for
+        a user, the top n images from that set are sent.
+        """
+        img_vector = self.img_msg_to_img_vector(img_msg)
+        # Get a new message ID
+        local_img_id = self.sent_messages_database.get_new_local_img_id()
+
+        rospy.loginfo("Send image! For users %s" % self.users_to_send_to_final)
+        self.sent_messages_database.add_image(
+            local_img_id, img_msg, img_vector, self.users_to_send_to_final)
+        self.database_updated()
 
     def subsampled_image(self, img_msg):
         """
@@ -265,7 +289,6 @@ class CMMDemo(object):
                     connected_components_msg = self.bridge.cv2_to_imgmsg(connected_components_cv2, encoding="passthrough")
                     connected_components_msg.step = int(connected_components_msg.step)
                     self.img_pub_connected_components.publish(connected_components_msg)
-
                 self.state = CMMDemoState.TUNE_IMAGE
             elif self.state == CMMDemoState.TUNE_IMAGE:
                 if self.visualize_view_tuner:
@@ -283,40 +306,47 @@ class CMMDemo(object):
                     rospy.sleep(2.0)
                     self.state = CMMDemoState.TAKE_PICTURE
             elif self.state == CMMDemoState.TAKE_PICTURE:
-                self.send_image(img_msg)
+                self.store_image(img_msg)
                 self.view_tuner.deinitialize_tuner()
 
     def get_slackbot_responses(self, refresh_secs=10.0):#30.0):#
         """
-        Once every refresh_secs seconds, get the message_ids that haven't yet
+        Once every refresh_secs seconds, get the image_ids that haven't yet
         been responded to, request the Slackbot for responses, and update the
         sent_messages_database accordingly.
         """
         r = rospy.Rate(1.0/refresh_secs)
         while not rospy.is_shutdown():
             if not self.has_loaded: r.sleep()
-            # Get the message_ids that haven't yet been reacted to
-            message_ids_without_responses = self.sent_messages_database.get_slackbot_msg_ids_without_responses()
+            # Get the image_ids that haven't yet been reacted to
+            image_ids_without_responses = self.sent_messages_database.get_slackbot_img_ids_without_responses()
             try:
-            	# Request responses for those message_ids
+            	# Request responses for those image_ids
             	res = requests.post(
-            		os.path.join(self.slackbot_url, 'get_responses'),
-            		json={'message_ids_and_user_ids':message_ids_without_responses},
+            		os.path.join(self.slackbot_url, 'get_updates'),
+            		json={'image_ids_and_users':image_ids_without_responses},
             	)
-            	message_id_to_user_reactions = res.json()["message_id_to_user_reactions"]
+                res_json = res.json()
+            	image_id_to_user_reactions = res_json["image_id_to_user_reactions"]
 
             	updated_users = set()
-            	if len(message_id_to_user_reactions) > 0:
+            	if len(image_id_to_user_reactions) > 0:
             	    # Insert reactions into the database
-            	    for message_id in message_id_to_user_reactions:
-            	        for user, reaction in message_id_to_user_reactions[message_id]:
-            	            rospy.loginfo("Got reaction %d from user %s for message_id %s" % (reaction, user, message_id))
-            	            self.sent_messages_database.add_user_reaction(message_id, user, reaction)
+            	    for image_id in image_id_to_user_reactions:
+            	        for user, reaction in image_id_to_user_reactions[image_id]:
+            	            rospy.loginfo("Got reaction %d from user %s for image_id %s" % (reaction, user, image_id))
+            	            self.sent_messages_database.add_user_reaction(image_id, user, reaction)
             	            updated_users.add(user)
             	    self.database_updated()
             	    for user in updated_users:
             	        with self.to_send_policy_lock:
             	            self.to_send_policy.got_reaction(user)
+
+                time_to_send = res_json["time_to_send"]
+                for user in time_to_send:
+                    if time_to_send[user] <= refresh_secs:
+                        # Send the top n images that user is most likely to like
+                        self.send_images(user)
             except Exception as e:
             	rospy.logwarn("Error communicating with Slackbot /get_responses at URL %s." % self.slackbot_url)
             	rospy.logwarn("Response text %s." % res.text)

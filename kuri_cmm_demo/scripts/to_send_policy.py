@@ -15,9 +15,9 @@ class ToSendPolicy(object):
     """
     def __init__(self, sent_messages_database, classes_cache_filepath=None,
         human_priors_and_history_dirpath=None, n_humans=1, default_variance=0.1):
-	"""
-	Initialize the an instance of the ToSendPolicy class.
-	"""
+    	"""
+    	Initialize the an instance of the ToSendPolicy class.
+    	"""
         # Database Parameters
         self.sent_messages_database = sent_messages_database
         self.n_objects = self.sent_messages_database.get_num_objects()
@@ -136,3 +136,11 @@ class ToSendPolicy(object):
         # Update the belief
         self.beliefs[user].compute_posterior(contexts, observations)
         rospy.loginfo("Recomputed posterior for user %d" % user)
+
+    def get_probability(self, user, img_vector):
+        """
+        Return the probability that user will like img_vector.
+        """
+        # Add an intercept term to the image
+        context = ToSendPolicy.image_to_context(img_vector)
+        return self.beliefs[user].get_probability(context)
