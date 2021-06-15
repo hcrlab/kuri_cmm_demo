@@ -131,7 +131,7 @@ class ViewTuner(object):
 
         # Determine the new location of the point
         p1, status, error = cv2.calcOpticalFlowPyrLK(self.saliency_prev_img_cv2_gray, img_cv2_gray, self.saliency_p0, None, **self.lk_params)
-        rospy.loginfo("before optical flow %s, after %s, status %s" % (self.saliency_p0, p1, status))
+        # rospy.loginfo("before optical flow %s, after %s, status %s" % (self.saliency_p0, p1, status))
         if status[0] == 1:
             self.saliency_p0 = p1
             self.saliency_prev_img_cv2_gray = img_cv2_gray
@@ -180,7 +180,7 @@ class ViewTuner(object):
             return False, img_annotated
         return False
 
-    def move_head(self, pan_endpoint=0.0, tilt_endpoint=-0.5,
+    def move_head(self, pan_endpoint=0.0, tilt_endpoint=-0.3,
         duration_secs=None, n_waypoints=10, wait_for_result=True,
         current_pan=None, current_tilt=None):
         """
@@ -236,7 +236,7 @@ class ViewTuner(object):
             point.effort = []
             point.time_from_start = (i+1)*time_interval
             goal.trajectory.points.append(point)
-        rospy.loginfo("move_head goal %s" % goal)
+        # rospy.loginfo("move_head goal %s" % goal)
 
         # Send the goal
         self.head_controller_action.wait_for_server()
@@ -252,6 +252,7 @@ class ViewTuner(object):
         self.saliency_img_msg = None
 
         if center_head:
+            rospy.loginfo("Centering Head")
             self.move_head()
 
     def is_initialized(self):

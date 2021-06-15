@@ -94,7 +94,7 @@ class CMMDemo(object):
         # Parameters relevant to communicating with the Slackbot
         self.slackbot_url = slackbot_url
         self.slackbot_responses_thread = threading.Thread(
-            target=self.get_slackbot_responses,
+            target=self.get_slackbot_updates,
         )
         self.slackbot_responses_thread.start()
 
@@ -111,8 +111,8 @@ class CMMDemo(object):
             rospy.logdebug("Saved sent_messages_database!")
 
     @staticmethod
-    def is_similar(most_recent_sent_img_msg, most_recent_sent_img_vector,
-        img_msg, img_vector, objects_threshold=3, image_threshold=0.75):
+    def is_similar(most_recent_stored_img_msgs, most_recent_stored_img_vectors,
+        img_msg, img_vector, objects_threshold=15, image_threshold=0.75):
         """
         Returns True if img is sufficiently similar to most_recent_img to not
         sent it, False otherwise. Images are deemed to be similar if there
@@ -127,30 +127,37 @@ class CMMDemo(object):
         similar. The reason we don't do only-histogram is because of changing
         lighting, but the hybrid approach should work well.
         """
-        # Pad the most_recent_sent_img_vector
-        num_new_objects = img_vector.shape[0] - most_recent_sent_img_vector.shape[0]
-        most_recent_sent_img_vector = np.pad(most_recent_sent_img_vector, (0, num_new_objects), 'constant', constant_values=0)
+        for i in range(len(most_recent_stored_img_msgs)):
+            most_recent_stored_img_msg = most_recent_stored_img_msgs[i]
+            most_recent_stored_img_vector = most_recent_stored_img_vectors[i]
 
-        # Get the change in probability for each object
-        different_objects = np.abs(img_vector - most_recent_sent_img_vector)
+            # Pad the most_recent_stored_img_vector
+            num_new_objects = img_vector.shape[0] - most_recent_stored_img_vector.shape[0]
+            most_recent_stored_img_vector = np.pad(most_recent_stored_img_vector, (0, num_new_objects), 'constant', constant_values=0)
 
-        # Get the total chnge in probability
-        change_in_prob = np.sum(different_objects)
-        object_is_similar = change_in_prob <= objects_threshold
+            # Get the change in probability for each object
+            different_objects = np.abs(img_vector - most_recent_stored_img_vector)
 
-        # Get the similarity of the histograms
-        most_recent_sent_img = cv.imdecode(np.fromstring(most_recent_sent_img_msg.data, np.uint8), cv.IMREAD_COLOR)
-        img = cv.imdecode(np.fromstring(img_msg.data, np.uint8), cv.IMREAD_COLOR)
-        avg_histogram_similarity = 0.0
-        channels = [0,1,2]
-        for channel in channels:
-            most_recent_sent_img_hist = cv.calcHist([most_recent_sent_img],[channel],None,[256],[0,256])
-            img_hist = cv.calcHist([img],[channel],None,[256],[0,256])
-            avg_histogram_similarity += cv.compareHist(most_recent_sent_img_hist, img_hist, cv.HISTCMP_CORREL)/len(channels)
-        image_is_similar = avg_histogram_similarity >= image_threshold
+            # Get the total chnge in probability
+            change_in_prob = np.sum(different_objects)
+            object_is_similar = change_in_prob <= objects_threshold
 
-        rospy.loginfo("is_similar object_similarity %f <= %f?, image_similarity %f >= %f?" % (change_in_prob, objects_threshold, avg_histogram_similarity, image_threshold))
-        return image_is_similar or object_is_similar
+            # Get the similarity of the histograms
+            most_recent_sent_img = cv.imdecode(np.fromstring(most_recent_stored_img_msg.data, np.uint8), cv.IMREAD_COLOR)
+            img = cv.imdecode(np.fromstring(img_msg.data, np.uint8), cv.IMREAD_COLOR)
+            avg_histogram_similarity = 0.0
+            channels = [0,1,2]
+            for channel in channels:
+                most_recent_stored_img_hist = cv.calcHist([most_recent_sent_img],[channel],None,[256],[0,256])
+                img_hist = cv.calcHist([img],[channel],None,[256],[0,256])
+                avg_histogram_similarity += cv.compareHist(most_recent_stored_img_hist, img_hist, cv.HISTCMP_CORREL)/len(channels)
+            image_is_similar = avg_histogram_similarity >= image_threshold
+
+            rospy.logdebug("is_similar object_similarity %f <= %f?, image_similarity %f >= %f?" % (change_in_prob, objects_threshold, avg_histogram_similarity, image_threshold))
+            if image_is_similar or object_is_similar:
+                return True
+
+        return False
 
     def img_msg_to_img_vector(self, img_msg):
         """
@@ -173,45 +180,67 @@ class CMMDemo(object):
             img_vector = self.to_send_policy.vectorize(detected_objects_msg)
             return img_vector
 
-    def send_images(self, user, n_images=5):
+    def send_images(self, user, n_images=5, n_objects=5):
         """
         Takes in an img_msg and sends it to the Slackbot
         """
         # Get the images the robot thinks the user is likely to like, and
         # compute the likleihood that the user will like them
         img_msgs, img_vectors, local_img_ids = self.sent_messages_database.get_stored_images_for_user(user)
-        probabilities = []
-        for img_vector in img_vectors:
-            probabilities.append(self.to_send_policy.get_probability(user, img_vector))
+        if len(img_msgs) > 0:
+            probabilities = []
+            for img_vector in img_vectors:
+                num_new_objects = self.sent_messages_database.get_num_objects() - img_vector.shape[0]
+                img_vector = np.pad(img_vector, (0, num_new_objects), 'constant', constant_values=0)
+                probabilities.append(self.to_send_policy.get_probability(user, img_vector))
 
-        # Determine the images to send.
-        # TODO: make this not just take the 5 max, but also account for the
-        # difference amongst the 5 images selected
-        top_img_indices = np.argsort(probabilities)[-1:-n_images-1:-1]
-        selected_images = []
-        for i in top_img_indices:
-            img_msg = img_msgs[i]
-            content = bytearray(img_msg.data)
-            selected_images.append(base64.b64encode(content).decode('ascii'))
+            # Determine the images to send.
+            # TODO: make this not just take the 5 max, but also account for the
+            # difference amongst the 5 images selected
+            top_img_indices = np.argsort(probabilities)[-1:-n_images-1:-1]
+            selected_images = []
+            selected_images_debug_description = []
+            selected_local_image_ids = []
+            for i in top_img_indices:
+                img_msg = img_msgs[i]
+                local_img_id = local_img_ids[i]
 
-        # Send the image
-        send_image_data = {
-            'images' : selected_images,
-            'users' : user,
-            # 'callback_url' : callback_url,
-        }
-        try:
-            res = requests.post(os.path.join(self.slackbot_url, 'send_images'), json=send_image_data)
-            slackbot_img_ids = res.json()["image_ids"]
-            self.sent_messages_database.add_slackbot_image_id(local_img_ids, slackbot_img_ids, user)
-            self.database_updated()
-        except Exception as e:
-            rospy.logwarn("Error communicating with Slackbot /send_image at URL %s." % self.slackbot_url)
-            rospy.logwarn("Response text %s." % res.text)
-            rospy.logwarn(traceback.format_exc())
-            rospy.logwarn("Error %s." % e)
-        with self.state_lock:
-            self.state = CMMDemoState.NORMAL
+                content = bytearray(img_msg.data)
+                selected_images.append(base64.b64encode(content).decode('ascii'))
+                selected_local_image_ids.append(local_img_id)
+
+                probability = probabilities[i]
+                debug_description = "Kuri thinks your likelihood of liking this image is %.02f. " % probability
+                img_vector = img_vectors[i]
+                top_objects = np.argsort(img_vector)[-1:-n_objects-1:-1]
+                objects = self.sent_messages_database.get_objects()
+                debug_description += "Kuri thinks the image has the following top-%d objects: " % n_objects
+                for j in top_objects:
+                    object_name = objects[j]
+                    object_probability = img_vector[j]
+                    debug_description += "%s (%.02f), " % (object_name, object_probability)
+                debug_description = debug_description[:-2]
+                selected_images_debug_description.append(debug_description)
+
+            # Send the image
+            send_image_data = {
+                'images' : selected_images,
+                'user' : user,
+                'image_descriptions' : selected_images_debug_description,
+                # 'callback_url' : callback_url,
+            }
+            try:
+                res = requests.post(os.path.join(self.slackbot_url, 'send_images'), json=send_image_data)
+                slackbot_img_ids = res.json()["image_ids"]
+                self.sent_messages_database.add_slackbot_image_id(selected_local_image_ids, slackbot_img_ids, user)
+                self.database_updated()
+            except Exception as e:
+                rospy.logwarn("Error communicating with Slackbot /send_images at URL %s." % self.slackbot_url)
+                rospy.logwarn("Response text %s." % res.text)
+                rospy.logwarn(traceback.format_exc())
+                rospy.logwarn("Error %s." % e)
+        else:
+            rospy.logwarn("Tried to send images from user %s, but had no images stored" % user)
 
     def store_image(self, img_msg):
         """
@@ -223,7 +252,7 @@ class CMMDemo(object):
         # Get a new message ID
         local_img_id = self.sent_messages_database.get_new_local_img_id()
 
-        rospy.loginfo("Send image! For users %s" % self.users_to_send_to_final)
+        rospy.loginfo("Store image! For users %s" % self.users_to_send_to_final)
         self.sent_messages_database.add_image(
             local_img_id, img_msg, img_vector, self.users_to_send_to_final)
         self.database_updated()
@@ -250,15 +279,16 @@ class CMMDemo(object):
                 users_to_send_to_initial = np.where(to_send)[0].tolist()
                 self.users_to_send_to_final = []
                 for user in users_to_send_to_initial:
-                    most_recent_sent_img_msg, most_recent_sent_img_vector = self.sent_messages_database.get_most_recent_image(user)
-                    if most_recent_sent_img_msg is None or not CMMDemo.is_similar(most_recent_sent_img_msg, most_recent_sent_img_vector, img_msg, img_vector):
+                    most_recent_stored_img_msgs, most_recent_stored_img_vectors = self.sent_messages_database.get_most_recent_stored_and_sent_images(user)
+                    if not CMMDemo.is_similar(most_recent_stored_img_msgs, most_recent_stored_img_vectors, img_msg, img_vector):
                         self.users_to_send_to_final.append(user)
-                rospy.loginfo("most_recent_sent_img_vector %s" % most_recent_sent_img_vector)
-                rospy.loginfo("                 img_vector %s" % img_vector)
+                rospy.logdebug("most_recent_stored_img_vectors %s" % most_recent_stored_img_vectors)
+                rospy.logdebug("                 img_vector %s" % img_vector)
                 # Skip the image if there are no users to send it to
                 if len(self.users_to_send_to_final) == 0:
                     return
                 self.state = CMMDemoState.INITIALIZE_TUNER
+                rospy.loginfo("State: NORMAL ==> INITIALIZE_TUNER")
 
 
     def img_callback(self, img_msg):
@@ -290,6 +320,7 @@ class CMMDemo(object):
                     connected_components_msg.step = int(connected_components_msg.step)
                     self.img_pub_connected_components.publish(connected_components_msg)
                 self.state = CMMDemoState.TUNE_IMAGE
+                rospy.loginfo("State: INITIALIZE_TUNER ==> TUNE_IMAGE")
             elif self.state == CMMDemoState.TUNE_IMAGE:
                 if self.visualize_view_tuner:
                     is_done, img_annotated = self.view_tuner.tune_image(img_msg, return_annotated_img=True)
@@ -305,11 +336,15 @@ class CMMDemo(object):
                     # Sleep to allow the image to not be blurry
                     rospy.sleep(2.0)
                     self.state = CMMDemoState.TAKE_PICTURE
+                    rospy.loginfo("State: TUNE_IMAGE ==> TAKE_PICTURE")
             elif self.state == CMMDemoState.TAKE_PICTURE:
                 self.store_image(img_msg)
                 self.view_tuner.deinitialize_tuner()
+                self.state = CMMDemoState.NORMAL
+                rospy.loginfo("State: TAKE_PICTURE ==> NORMAL")
 
-    def get_slackbot_responses(self, refresh_secs=10.0):#30.0):#
+
+    def get_slackbot_updates(self, refresh_secs=10.0):#30.0):#
         """
         Once every refresh_secs seconds, get the image_ids that haven't yet
         been responded to, request the Slackbot for responses, and update the
@@ -327,6 +362,7 @@ class CMMDemo(object):
             		json={'image_ids_and_users':image_ids_without_responses},
             	)
                 res_json = res.json()
+                rospy.loginfo("Got updates from Slackbot %s" % res_json)
             	image_id_to_user_reactions = res_json["image_id_to_user_reactions"]
 
             	updated_users = set()
@@ -346,9 +382,9 @@ class CMMDemo(object):
                 for user in time_to_send:
                     if time_to_send[user] <= refresh_secs:
                         # Send the top n images that user is most likely to like
-                        self.send_images(user)
+                        self.send_images(int(user))
             except Exception as e:
-            	rospy.logwarn("Error communicating with Slackbot /get_responses at URL %s." % self.slackbot_url)
+            	rospy.logwarn("Error communicating with Slackbot /get_updates at URL %s." % self.slackbot_url)
             	rospy.logwarn("Response text %s." % res.text)
             	rospy.logwarn(traceback.format_exc())
             	rospy.logwarn("Error %s." % e)

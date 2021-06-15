@@ -204,8 +204,8 @@ class BayesianLogisticRegression(object):
         Else, assume theta is the true theta
         """
         if theta is None:
-            mu = np.dot(self.posteriorMean.T, context)
-            var = np.dot(context.T, np.dot(self.posteriorCovariance, context))
+            mu = np.dot(self.posterior_mean.T, context)
+            var = np.dot(context.T, np.dot(self.posterior_covariance, context))
             return expit((1+np.pi*var/8)**(-0.5)*mu)
         else:
             human_preference = np.dot(theta, context)
