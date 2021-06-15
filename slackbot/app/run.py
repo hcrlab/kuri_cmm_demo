@@ -181,12 +181,12 @@ class FlaskSlackbot(object):
             image_ids.append(image_id)
         return image_ids
 
-    def send_image_to_slack(self, image_id, direct_link, user_id):
+    def send_image_to_slack(self, image_id, direct_link, user_id, image_description):
         """
         Actually sends the Slack message. Returns a boolean indicating whether
         the send was succesful or not.
         """
-        payload = slack_template_1(user_id, direct_link)
+        payload = slack_template_1(user_id, direct_link, image_description)
 
         # Send the message
         response = self.slack_app.client.chat_postMessage(**payload)
@@ -215,32 +215,13 @@ class FlaskSlackbot(object):
           sent image succeeded
         """
 
-        image_filepaths = ["../imgs/test_image_%d.jpg" % i for i in range(2)]
-        raw_bytes = []
-        for i in range(len(image_filepaths)):
-            image_filepath = image_filepaths[i]
-            with open(image_filepath, "rb") as f:
-                raw_bytes.append(f.read())
-                encoded_bytes = base64.encodebytes(raw_bytes[-1]).decode('ascii')
-                print("request.json['images'][i] == encoded_bytes", request.json['images'][i] == encoded_bytes)
-
-
         # Decode the request
         images_bytes = []
         # print("request.json['images']", request.json['images'], len(request.json['images']))
         for i in range(len(request.json['images'])):
             image = request.json['images'][i]
-            print("type(image)", type(image))
-            print("type(image.encode('ascii'))", type(image.encode('ascii')))
-            print("type(base64.decodebytes(image.encode('ascii')))", type(base64.decodebytes(image.encode('ascii'))))
             image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
-            print("image_bytes == raw_bytes[i]", image_bytes == raw_bytes[i])
             images_bytes.append(image_bytes)
-
-            # image_array = np.fromstring(image_bytes, np.uint8)
-            # img_cv2 = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-            # cv2.imshow("test_window", img_cv2)
-            # cv2.waitKey(0)
         user = request.json['user']
 
         image_ids = self.get_image_ids(images_bytes)
@@ -263,14 +244,20 @@ class FlaskSlackbot(object):
         self.sent_messages_database.add_image_urls(image_ids, image_urls)
         self.database_updated(len(image_ids))
 
+        if 'image_descriptions' in request.json:
+            image_descriptions = request.json['image_descriptions']
+        else:
+            image_descriptions = [None for _ in range(len(image_ids))]
+
         # Send the first message
         image_id = image_ids.pop(0)
         direct_link = image_urls.pop(0)
+        image_description = image_descriptions.pop(0)
         user_id = self.users[user]
-        send_result = self.send_image_to_slack(image_id, direct_link, user_id)
+        send_result = self.send_image_to_slack(image_id, direct_link, user_id, image_description)
 
         # Update the images to send
-        self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls)
+        self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls, image_descriptions)
 
         response = self.flask_app.response_class(
             response=json.dumps({'image_ids':image_ids_to_return, 'first_send_image_state':send_result}),
@@ -440,10 +427,10 @@ class FlaskSlackbot(object):
         self.database_updated()
 
         # Send the next image
-        image_id, direct_link = self.sent_messages_database.get_next_image_to_send(user_id)
+        image_id, direct_link, image_description = self.sent_messages_database.get_next_image_to_send(user_id)
         self.database_updated()
         if image_id is not None:
-            self.send_image_to_slack(image_id, direct_link, user_id)
+            self.send_image_to_slack(image_id, direct_link, user_id, image_description)
 
 
     def test_get_images(self, ack, say, command, event, respond):

@@ -75,12 +75,12 @@ class SentMessagesDatabase(object):
             if image_url is not None:
                 self.image_id_to_url[image_id] = image_url
 
-    def set_remaining_images_to_send(self, user_id, image_ids, image_urls):
+    def set_remaining_images_to_send(self, user_id, image_ids, image_urls, image_descriptions):
         """
         Sets the remaining images to send to this user. image_urls should be a
         list of strings.
         """
-        self.user_id_to_remaining_image_urls_to_send[user_id] = list(zip(image_ids, image_urls))
+        self.user_id_to_remaining_image_urls_to_send[user_id] = list(zip(image_ids, image_urls, image_descriptions))
 
     def get_next_image_to_send(self, user_id):
         """
@@ -88,7 +88,7 @@ class SentMessagesDatabase(object):
         None
         """
         if user_id not in self.user_id_to_remaining_image_urls_to_send or len(self.user_id_to_remaining_image_urls_to_send[user_id]) == 0:
-            return None, None
+            return None, None, None
         return self.user_id_to_remaining_image_urls_to_send[user_id].pop(0)
 
     def add_sent_message(self, image_id, user_id, ts):
@@ -102,6 +102,9 @@ class SentMessagesDatabase(object):
         self.image_id_to_user_id_ts[image_id].add((user_id, ts))
         self.user_id_ts_to_image_id[(user_id, ts)] = image_id
         self.user_id_ts_to_reactions[(user_id, ts)] = [0, 0]
+
+        # Reset the user's time to send
+        self.user_id_to_next_image_send_time.pop(user_id, None)
 
     def add_reaction(self, user_id, ts, reaction):
         """
