@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   control_msgs
   trajectory_msgs
   message_generation
+  local_coverage_navigation
 )
 
 ## System dependencies are found with CMake's conventions
