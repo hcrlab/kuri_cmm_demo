@@ -406,7 +406,7 @@ class FlaskSlackbot(object):
         ack()
         self.recv_reaction(body, 0)
 
-    def start_kuri(self, ack, say, command, event, respond)):
+    def start_kuri(self, ack, say, command, event, respond):
         ack()
         say(
             {
