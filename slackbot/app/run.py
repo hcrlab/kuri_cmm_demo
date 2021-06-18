@@ -20,7 +20,7 @@ import traceback
 import yaml
 
 class FlaskSlackbot(object):
-    def __init__(self, slackbot_conf, flask_port=8194, slack_port=8193,
+    def __init__(self, slackbot_conf, flask_port=3001, slack_port=3000,
         sent_messages_database_filepath="../cfg/sent_messages_database.pkl",
         database_save_interval=1):
         """
