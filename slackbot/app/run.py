@@ -54,6 +54,7 @@ class FlaskSlackbot(object):
         self.slack_app.action("action_id_check_mark")(self.action_button_check_mark)
         self.slack_app.action("action_id_x")(self.action_button_x)
         self.slack_app.command("/test_get_images")(self.test_get_images)
+        self.slack_app.command("/start_kuri")(self.start_kuri)
 
         # Store the Slack users
         self.users = slackbot_conf['users_list']
@@ -404,6 +405,61 @@ class FlaskSlackbot(object):
         # Acknowledge the action
         ack()
         self.recv_reaction(body, 0)
+
+    def start_bot(ack,say,command):
+        ack()
+        say(
+            {
+                "text": "Hi, it's Kuribot! I'm introducing myself to you. Get ready for some images.",
+                "blocks":[
+                    {
+            			"type": "section",
+            			"text": {
+            				"type": "mrkdwn",
+            				"text": "Thanks for getting started, I'll send you a message soon after I get things set up."
+            			}
+            		},
+                    {
+            			"type": "section",
+            			"text": {
+            				"type": "mrkdwn",
+            				"text": "In the meantime, I'm very excited to work with you and I want to show you a dance I've been working on. I hope you like it."
+            			}
+            		},
+                    {
+                		"type": "image",
+                		"image_url": "https://cdn.discordapp.com/attachments/827661547802198016/847616239572090900/mayfield-robotics-ceases-production-of-kuri-robot-amid-a-questionable-future.gif",
+                		"alt_text": "My big dance",
+                	}
+                ]
+            }
+        )
+        filepath_list= [r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1655_eyelid.png",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1689.jpg",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1610.jpg",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1623.jpg"]
+        #filepath = r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1655_eyelid.png"
+        #Kuri starts from a command, so we can just get the user_id
+        user_id = command["user_id"]
+        #randomly assign people to condition. 0 is description, 1 is follow-up 1, 2 is follow-up 2
+        #condition = random.randrange(2)
+        condition = 0 #for testing
+        #intro_message(user_id)
+        message_i = 0
+        """
+        # Single image/message
+        with open(filepath, "rb") as f:
+            content = f.read()
+            public_link = publicise_image(content)
+            #Separated image and message so that clicking a button can update the photo message and remove the buttons without messing with the photo
+            recv_image(public_link,user_id,message_i)
+            recv_message(user_id,message_i,condition)
+        """
+        # Multiple images/messages (need to update for new set)
+        for filepath in filepath_list:
+            with open(filepath, "rb") as f:
+                content = f.read()
+                public_link = publicise_image(content)
+                recv_image(public_link, user_id, message_i)
+                recv_message(user_id,message_i,condition)
+                message_i += 1
 
     # def get_response_json(self, message_id, user_id, reaction):
     #     """

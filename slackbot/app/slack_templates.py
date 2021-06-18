@@ -83,11 +83,11 @@ def intro_template(day, user_id):
         img_link = "https://cdn.discordapp.com/attachments/827661547802198016/847616239572090900/mayfield-robotics-ceases-production-of-kuri-robot-amid-a-questionable-future.gif"
         message_text = "In the meantime, I'm very excited to work with you and I want to show you a dance I've been working on. I hope you like it."
         alt_text = "My big dance"
-    else if day == 1:
+    elif day == 1:
         img_link = "https://www.cnet.com/a/img/JkD_3wBEktye-EV2e3G8OdbSGSI=/770x578/2017/01/03/026e660f-4525-4bc8-94f3-9a5e9c61a776/kuriproductphotos-4.jpg"
         message_text = "I'm looking foward to starting the second day, here's a little token of my appriciation"
         alt_text = "Thanks"
-    else if day == 2:
+    elif day == 2:
         img_link = "https://thegadgetflow.com/wp-content/uploads/2017/01/Kuri-Intelligent-Home-Robot-004.jpg"
         message_text = "This is the last day, I hope you are ready to finish strong! Here's something that might inspire you."
         alt_text = "Party time!"
@@ -226,7 +226,7 @@ def action_button_check_mark_or_x(user_id, condition,response):
         "Thank you, I've added your feedback to my database. If you tell me more about objects you liked in the photo, I can learn more efficiently",
         "Thank you, I'm starting to understand your preferences better. Can you explain more about why you liked this photo? Any objects that you liked?"
         ]
-    else if condition == 2 and response == 0:
+    elif condition == 2 and response == 0:
         message_list = [
         "Thank you, I'll use your response to choose better photos. I'd like to understand more about why you disliked this photo. Was there an object in the photo that you disliked? What was it?",
         "Thank you, I've recorded your response, which I will learn from. I want to learn why you disliked this photo, was there a particular object you disliked?",
