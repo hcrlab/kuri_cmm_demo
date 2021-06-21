@@ -131,7 +131,6 @@ def post_image(user_id, public_link, image_description=None):
     #An image image_description
     if image_description is None:
         image_description = "Kuri shared this picture with you!"
-
     payload = {
         "ts": "",
         "channel": user_id,
