@@ -424,11 +424,21 @@ class FlaskSlackbot(object):
         # Decode the request
         images_bytes = []
         # print("request.json['images']", request.json['images'], len(request.json['images']))
+        #replacing request.json with a list of images_bytes
+        """
         for i in range(len(request.json['images'])):
             image = request.json['images'][i]
             image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
             images_bytes.append(image_bytes)
         user = request.json['user']
+        """
+        image_filepaths = ["../imgs/Kuri_UCSC/IMG_1610.jpg","../imgs/Kuri_UCSC/IMG_1623.jpg","../imgs/Kuri_UCSC/IMG_1655.jpg", "../imgs/Kuri_UCSC/IMG_1623.jpg"]
+        for i in range(len(image_filepaths)):
+            image = image_filepaths[i]
+            image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
+            images_bytes.append(image_bytes)
+        #user is from command, make sure to fix.
+        user = command["user_id"]
 
         image_ids = self.get_image_ids(images_bytes)
 
@@ -450,11 +460,15 @@ class FlaskSlackbot(object):
         self.sent_messages_database.add_image_urls(image_ids, image_urls)
         self.database_updated(len(image_ids))
 
+        #I don't have image descriptions, so they get none
+        """
         if 'image_descriptions' in request.json:
             image_descriptions = request.json['image_descriptions']
         else:
             image_descriptions = [None for _ in range(len(image_ids))]
-
+        """
+        image_descriptions = [None for _ in range(len(image_ids))]
+        
         # Send the first message
         image_id = image_ids.pop(0)
         direct_link = image_urls.pop(0)
@@ -465,7 +479,7 @@ class FlaskSlackbot(object):
         # Update the images to send
         self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls, image_descriptions)
 
-        
+
         #Send the next message. Not sure if this is working correctly
 
     # def get_response_json(self, message_id, user_id, reaction):
