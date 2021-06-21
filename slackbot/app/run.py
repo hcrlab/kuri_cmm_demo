@@ -416,7 +416,7 @@ class FlaskSlackbot(object):
         ack()
         #sends the intro message, assuming that this is the first day
         #replace command["user_id"] with user ID derived from list later!
-        payload = intro_template(0,command["user_id"])
+        payload = intro_template(2,command["user_id"])
         response = self.slack_app.client.chat_postMessage(**payload)
 
         #Send the next message. Not sure if this is working correctly
