@@ -124,11 +124,14 @@ def intro_template(day, user_id):
     }
     return payload
 
-def post_image(public_link,user_id):
+def post_image(user_id, public_link, image_description=None):
     #This posts an image given:
-    #an existing link to that image: public_link
     #the user ID: user_id
-    #and which message: message_i. Expected values here are 0-4
+    #an existing link to that image: public_link
+    #An image image_description
+    if image_description is None:
+        image_description = "Kuri shared this picture with you!"
+
     payload = {
         "ts": "",
         "channel": user_id,
@@ -139,7 +142,7 @@ def post_image(public_link,user_id):
     	{
     		"type": "image",
     		"image_url": public_link,
-    		"alt_text": "Kuri shared this picture with you!",
+    		"alt_text": image_description,
     	}
 	   ],
     }
@@ -200,7 +203,7 @@ def post_message(user_id, message_i, condition):
     }
     return payload
 
-def action_button_check_mark_or_x(user_id, condition,response):
+def action_button_check_mark_or_x(user_id, condition, response):
     ack()
     #user_id is the users_id
     #which user study condition: condition. Expected values are 0 (description), 1 (follow up 1), and 2 (follow up 2)

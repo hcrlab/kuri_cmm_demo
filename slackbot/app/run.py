@@ -11,7 +11,7 @@ import random
 import requests
 from sent_messages_database import SentMessagesDatabase
 from slack_bolt import App
-from slack_templates import slack_template_1
+from slack_templates import slack_template_1, intro_template, post_image, post_message, action_button_check_mark_or_x, confirm_input, end_block_template
 import string
 import sys
 import threading
@@ -58,6 +58,8 @@ class FlaskSlackbot(object):
 
         # Store the Slack users
         self.users = slackbot_conf['users_list']
+        #Store the conditions that a user is in (user_id is the key, which returns a tuple with the first int as user study condition (0-2) and the second as leanring (0-1))
+        self.users_to_condition = slackbot_conf['users_to_condition']
 
         # Keep track of the images that are sent
         self.sent_messages_database_filepath = sent_messages_database_filepath
@@ -187,9 +189,13 @@ class FlaskSlackbot(object):
         Actually sends the Slack message. Returns a boolean indicating whether
         the send was succesful or not.
         """
-        payload = slack_template_1(user_id, direct_link, image_description)
+        #payload = slack_template_1(user_id, direct_link, image_description)
+        payload = post_image(user_id, direct_link, image_description)
+        # Send the image
+        response = self.slack_app.client.chat_postMessage(**payload)
 
-        # Send the message
+        payload = post_message(user_id, message_i, condition)
+        # Next, send the message
         response = self.slack_app.client.chat_postMessage(**payload)
         if not response["ok"]:
             logging.info("Error sending file to user %s %s" % (user_id, response))
@@ -388,7 +394,7 @@ class FlaskSlackbot(object):
             mimetype='application/json'
         )
         return response
-        #I think add condition to this as well?
+
     def action_button_check_mark(self, body, ack, say):
         """
         Bolt App callback for when the user clicks the :check_mark: button on
@@ -408,58 +414,13 @@ class FlaskSlackbot(object):
 
     def start_kuri(self, ack, say, command, event, respond):
         ack()
-        say(
-            {
-                "text": "Hi, it's Kuribot! I'm introducing myself to you. Get ready for some images.",
-                "blocks":[
-                    {
-            			"type": "section",
-            			"text": {
-            				"type": "mrkdwn",
-            				"text": "Thanks for getting started, I'll send you a message soon after I get things set up."
-            			}
-            		},
-                    {
-            			"type": "section",
-            			"text": {
-            				"type": "mrkdwn",
-            				"text": "In the meantime, I'm very excited to work with you and I want to show you a dance I've been working on. I hope you like it."
-            			}
-            		},
-                    {
-                		"type": "image",
-                		"image_url": "https://cdn.discordapp.com/attachments/827661547802198016/847616239572090900/mayfield-robotics-ceases-production-of-kuri-robot-amid-a-questionable-future.gif",
-                		"alt_text": "My big dance",
-                	}
-                ]
-            }
-        )
-        filepath_list= [r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1655_eyelid.png",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1689.jpg",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1610.jpg",r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1623.jpg"]
-        #filepath = r"C:\Users\Lee32\Documents\Github\Kuri-Bot-Slack\Kuri_UCSC\IMG_1655_eyelid.png"
-        #Kuri starts from a command, so we can just get the user_id
-        user_id = command["user_id"]
-        #randomly assign people to condition. 0 is description, 1 is follow-up 1, 2 is follow-up 2
-        #condition = random.randrange(2)
-        condition = 0 #for testing
-        #intro_message(user_id)
-        message_i = 0
-        """
-        # Single image/message
-        with open(filepath, "rb") as f:
-            content = f.read()
-            public_link = publicise_image(content)
-            #Separated image and message so that clicking a button can update the photo message and remove the buttons without messing with the photo
-            recv_image(public_link,user_id,message_i)
-            recv_message(user_id,message_i,condition)
-        """
-        # Multiple images/messages (need to update for new set)
-        for filepath in filepath_list:
-            with open(filepath, "rb") as f:
-                content = f.read()
-                public_link = publicise_image(content)
-                recv_image(public_link, user_id, message_i)
-                recv_message(user_id,message_i,condition)
-                message_i += 1
+        #sends the intro message, assuming that this is the first day
+        #replace command["user_id"] with user ID derived from list later!
+        payload = intro_template(0,command["user_id"])
+        response = self.slack_app.client.chat_postMessage(**payload)
+
+        #Send the next message. Not sure if this is working correctly
+        send_image()
 
     # def get_response_json(self, message_id, user_id, reaction):
     #     """

@@ -1,6 +1,7 @@
 users_list: ["", ""]
 # See https://docs.google.com/document/d/1D1hoInDg7urD7bdEWlJYECyfAjihmlJEwYAwjEWbbMM/edit
 # for instructions on setting up a Slackbot and getting its tokens/secrets.
+users_to_condition: {"user_id":(0,1)}
 slack_bot_token: ""
 slack_user_token: ""
 slack_signing_secret: ""
