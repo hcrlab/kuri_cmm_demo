@@ -191,7 +191,7 @@ class FlaskSlackbot(object):
         """
         #Replace here the original slack_template with my new one
         #payload = slack_template_1(user_id, direct_link, image_description)
-        payload = post_image(user_id, direct_link, image_description, message_i)
+        payload = post_image(user_id, direct_link, message_i, image_description)
         # Send the image
         response = self.slack_app.client.chat_postMessage(**payload)
         if not response["ok"]:
