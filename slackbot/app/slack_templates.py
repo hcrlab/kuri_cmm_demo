@@ -242,7 +242,6 @@ def post_message(user_id, message_i):
     return payload
 
 def action_button_check_mark_or_x(user_id, condition, response):
-    ack()
     #user_id is the users_id
     #which user study condition: condition. Expected values are 0 (description), 1 (follow up 1), and 2 (follow up 2)
     #response is the type of response from the button they clicked. 1 is check mark, 0 is X
