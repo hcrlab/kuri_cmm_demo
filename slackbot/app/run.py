@@ -429,76 +429,7 @@ class FlaskSlackbot(object):
         """
         ack()
         self.recv_input(body)
-    """
-    def start_kuri(self, ack, say, command, event, respond):
-        ack()
-        #sends the intro message, assuming that this is the first day
-        #replace command["user_id"] with user ID derived from list later!
-        payload = intro_template(2,command["user_id"])
-        response = self.slack_app.client.chat_postMessage(**payload)
-
-        #Edited replication of send_image for Lee's plaype
-        # Decode the request
-        images_bytes = []
-        #replacing request.json with a list of images_filepaths
-        #
-        #for i in range(len(request.json['images'])):
-        #    image = request.json['images'][i]
-        #    image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
-        #    images_bytes.append(image_bytes)
-        #user = request.json['user']
-
-        image_filepaths = ["../imgs/Kuri_UCSC/IMG_1610.jpg","../imgs/Kuri_UCSC/IMG_1623.jpg","../imgs/Kuri_UCSC/IMG_1655.jpg", "../imgs/Kuri_UCSC/IMG_1623.jpg"]
-        for i in range(len(image_filepaths)):
-            image = image_filepaths[i]
-            image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
-            images_bytes.append(image_bytes)
-            print(image_bytes)
-        #user is from command, make sure to fix.
-        user = command["user_id"]
-
-        image_ids = self.get_image_ids(images_bytes)
-
-        # Get a URL to the image, and remove failed URLs
-        image_ids_to_return = []
-        image_urls = self.get_image_urls(images_bytes, image_ids)
-        print("image_ids", image_ids, "image_urls", image_urls)
-        i = 0
-        while i < len(image_ids):
-            image_id = image_ids[i]
-            image_url = image_urls[i]
-            if image_url is None:
-                image_ids.pop(i)
-                image_urls.pop(i)
-                image_ids_to_return.append(False)
-            else:
-                i += 1
-                image_ids_to_return.append(image_id)
-        self.sent_messages_database.add_image_urls(image_ids, image_urls)
-        self.database_updated(len(image_ids))
-
-        #I don't have image descriptions, so they get none
-        """
-        if 'image_descriptions' in request.json:
-            image_descriptions = request.json['image_descriptions']
-        else:
-            image_descriptions = [None for _ in range(len(image_ids))]
-        """
-        image_descriptions = [None for _ in range(len(image_ids))]
-
-        # Send the first message
-        image_id = image_ids.pop(0)
-        direct_link = image_urls.pop(0)
-        image_description = image_descriptions.pop(0)
-        user_id = self.users[user]
-        send_result = self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
-
-        # Update the images to send
-        self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls, image_descriptions)
-
-
-        #Send the next message. Not sure if this is working correctly
-
+    
     # def get_response_json(self, message_id, user_id, reaction):
     #     """
     #     Returns the json payload (as a dict) of a human response of reaction to
