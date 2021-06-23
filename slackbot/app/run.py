@@ -55,7 +55,7 @@ class FlaskSlackbot(object):
         self.slack_app.action("action_id_x")(self.action_button_x)
         self.slack_app.action("confirm_input")(self.confirm_input)
         self.slack_app.command("/test_get_images_2")(self.test_get_images_2)
-        self.slack_app.command("/start_kuri")(self.start_kuri)
+        #self.slack_app.command("/start_kuri")(self.start_kuri)
 
         # Store the Slack users
         self.users = slackbot_conf['users_list']
@@ -429,7 +429,7 @@ class FlaskSlackbot(object):
         """
         ack()
         self.recv_input(body)
-    
+
     # def get_response_json(self, message_id, user_id, reaction):
     #     """
     #     Returns the json payload (as a dict) of a human response of reaction to
