@@ -124,7 +124,7 @@ def intro_template(day, user_id):
     }
     return payload
 
-def post_image(user_id, public_link, image_description=None, message_i, condition):
+def post_image(user_id, public_link, image_description=None, message_i):
     #This posts an image given:
     #the user ID: user_id
     #an existing link to that image: public_link
