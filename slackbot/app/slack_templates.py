@@ -124,13 +124,22 @@ def intro_template(day, user_id):
     }
     return payload
 
-def post_image(user_id, public_link, image_description=None):
+def post_image(user_id, public_link, image_description=None, message_i, condition):
     #This posts an image given:
     #the user ID: user_id
     #an existing link to that image: public_link
     #An image image_description
     if image_description is None:
         image_description = "Kuri shared this picture with you!"
+
+    photo_message_list= [
+    "Here is the first photo. Please respond with either a :white_check_mark: or a :x: if you like or dislike this photo.",
+    "Here is the second photo. Please let me know if you like or dislike this photo with either a :white_check_mark: or a :x:.",
+    "Here is the third photo. Please help me out further by replying with either a :white_check_mark: or a :x: if you like or dislike the photo.",
+    "Here is the fourth photo. If you like this photo, let me know with a :white_check_mark:, if you dislike it, let me know with a :x:.",
+    "Here is the fifth photo. Please select a :white_check_mark: if you like the photo, or select a :x: if you dislike it."
+    ]
+
     payload = {
         "ts": "",
         "channel": user_id,
@@ -142,12 +151,42 @@ def post_image(user_id, public_link, image_description=None):
     		"type": "image",
     		"image_url": public_link,
     		"alt_text": image_description,
-    	}
+    	},
+        {
+    		"type": "section",
+    		"text": {
+    			"type": "mrkdwn",
+    			"text": photo_message_list[message_i]
+    		}
+    	},
+    	{
+    		"type": "actions",
+    		"elements": [
+    			{
+    				"type": "button",
+    				"text": {
+    					"type": "plain_text",
+    					"text": ":white_check_mark:"
+    				},
+    				"value": "check_mark",
+    				"action_id": "action_id_check_mark"
+    			},
+    			{
+    				"type": "button",
+    				"text": {
+    					"type": "plain_text",
+    					"text": ":x:"
+    				},
+    				"value": "x_mark",
+    				"action_id": "action_id_x"
+    			}
+    		]
+		}
 	   ],
     }
     return payload
 
-def post_message(user_id, message_i, condition):
+def post_message(user_id, message_i):
     #This posts an image given:
     #the user ID: user_id
     #which message: message_i. Expected values here are 0-4
