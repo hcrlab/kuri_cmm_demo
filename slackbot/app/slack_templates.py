@@ -1,3 +1,5 @@
+import random
+
 def slack_template_1(user_id, direct_link, image_description=None):
     if image_description is None:
         image_description = "Kuri shared this picture with you!"
