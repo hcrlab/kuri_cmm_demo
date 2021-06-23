@@ -512,6 +512,11 @@ class FlaskSlackbot(object):
         self.sent_messages_database.add_reaction(user_id, ts, reaction)
         self.database_updated()
 
+        #Get followup
+        #Condition is set to zero for testing
+        payload = action_button_check_mark_or_x(user_id,0,reaction)
+        response = self.slack_app.client.chat_postMessage(**payload)
+
         # Send the next image
         image_id, direct_link, image_description = self.sent_messages_database.get_next_image_to_send(user_id)
         self.database_updated()

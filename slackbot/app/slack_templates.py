@@ -224,7 +224,7 @@ def post_message(user_id, message_i):
     					"text": ":white_check_mark:"
     				},
     				"value": "check_mark",
-    				"action_id": "action_id_check_mark"
+    				"action_id": "action_button_check_mark"
     			},
     			{
     				"type": "button",
@@ -233,7 +233,7 @@ def post_message(user_id, message_i):
     					"text": ":x:"
     				},
     				"value": "x_mark",
-    				"action_id": "action_id_x"
+    				"action_id": "action_button_x"
     			}
     		]
 		}
