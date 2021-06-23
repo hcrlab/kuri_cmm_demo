@@ -200,7 +200,7 @@ class FlaskSlackbot(object):
         ts = response["message"]["ts"]
         self.sent_messages_database.add_sent_message(image_id, user_id, ts)
         self.database_updated()
-
+        """
         payload = post_message(user_id, message_i, condition)
         # Next, send the message
         response = self.slack_app.client.chat_postMessage(**payload)
@@ -212,6 +212,7 @@ class FlaskSlackbot(object):
         # Store a reference to the message
         self.sent_messages_database.add_sent_message(image_id, user_id, ts)
         self.database_updated()
+        """
         return True
 
     def send_images(self):
