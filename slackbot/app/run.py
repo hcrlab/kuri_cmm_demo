@@ -441,13 +441,13 @@ class FlaskSlackbot(object):
         # Decode the request
         images_bytes = []
         #replacing request.json with a list of images_filepaths
-        """
-        for i in range(len(request.json['images'])):
-            image = request.json['images'][i]
-            image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
-            images_bytes.append(image_bytes)
-        user = request.json['user']
-        """
+        #
+        #for i in range(len(request.json['images'])):
+        #    image = request.json['images'][i]
+        #    image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
+        #    images_bytes.append(image_bytes)
+        #user = request.json['user']
+
         image_filepaths = ["../imgs/Kuri_UCSC/IMG_1610.jpg","../imgs/Kuri_UCSC/IMG_1623.jpg","../imgs/Kuri_UCSC/IMG_1655.jpg", "../imgs/Kuri_UCSC/IMG_1623.jpg"]
         for i in range(len(image_filepaths)):
             image = image_filepaths[i]
