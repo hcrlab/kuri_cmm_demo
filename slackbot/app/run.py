@@ -422,6 +422,13 @@ class FlaskSlackbot(object):
         ack()
         self.recv_reaction(body, 0)
 
+    def confirm_input(self, body, ack, say):
+        """
+        Bolt App callback for when the user clicks the confirm button on their input
+        """
+        ack()
+        self.recv_input(body)
+
     def start_kuri(self, ack, say, command, event, respond):
         ack()
         #sends the intro message, assuming that this is the first day
@@ -483,7 +490,7 @@ class FlaskSlackbot(object):
         direct_link = image_urls.pop(0)
         image_description = image_descriptions.pop(0)
         user_id = self.users[user]
-        send_result = self.send_image_to_slack(image_id, direct_link, user_id, image_description)
+        send_result = self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
 
         # Update the images to send
         self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls, image_descriptions)
@@ -517,12 +524,42 @@ class FlaskSlackbot(object):
         payload = action_button_check_mark_or_x(user_id,0,reaction)
         response = self.slack_app.client.chat_postMessage(**payload)
 
+        """
         # Send the next image
         image_id, direct_link, image_description = self.sent_messages_database.get_next_image_to_send(user_id)
+        #Iterate internal message_i somehow, assume 1 for now.
+        message_i = 1
         self.database_updated()
         if image_id is not None:
-            self.send_image_to_slack(image_id, direct_link, user_id, image_description)
+            self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
+            """
+        #Next image happens after receiving input
 
+    def recv_input(self, body):
+        """
+        Stores the user's input.
+        """
+        # Get user_id, ts, and input
+        user_id = body["user"]["id"]
+        ts = body["container"]["message_ts"]
+        input = body["message"]["blocks"][0]
+        logging.info('Got input %s from user %s for message at ts %s' % (input, user_id, ts))
+
+        # AMAL need to add this portion
+        #self.sent_messages_database.add_reaction(user_id, ts, reaction)
+        #self.database_updated()
+
+        #Update after user response
+        payload = confirm_input_template(input,user_id)
+        response = self.slack_app.client.chat_postMessage(**payload)
+
+        # Send the next image
+        image_id, direct_link, image_description = self.sent_messages_database.get_next_image_to_send(user_id)
+        #Iterate internal message_i somehow, assume 1 for now.
+        message_i = 1
+        self.database_updated()
+        if image_id is not None:
+            self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
 
     def test_get_images(self, ack, say, command, event, respond):
         """

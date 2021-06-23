@@ -329,7 +329,7 @@ def action_button_check_mark_or_x(user_id, condition, response):
 
     return payload
 
-def confirm_input(user_input,user_id):
+def confirm_input_template(user_input,user_id):
     #user_input is recovered at the pevious step, from something like
         #body["message"]["blocks"][0]
     #user_id is the user's id for correct placement
