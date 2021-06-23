@@ -53,7 +53,8 @@ class FlaskSlackbot(object):
         self.slack_port = slack_port
         self.slack_app.action("action_id_check_mark")(self.action_button_check_mark)
         self.slack_app.action("action_id_x")(self.action_button_x)
-        self.slack_app.command("/test_get_images")(self.test_get_images)
+        self.slack_app.action("confirm_input")(self.confirm_input)
+        self.slack_app.command("/test_get_images_2")(self.test_get_images_2)
         self.slack_app.command("/start_kuri")(self.start_kuri)
 
         # Store the Slack users
@@ -428,7 +429,7 @@ class FlaskSlackbot(object):
         """
         ack()
         self.recv_input(body)
-
+    """
     def start_kuri(self, ack, say, command, event, respond):
         ack()
         #sends the intro message, assuming that this is the first day
@@ -561,9 +562,9 @@ class FlaskSlackbot(object):
         if image_id is not None:
             self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
 
-    def test_get_images(self, ack, say, command, event, respond):
+    def test_get_images_2(self, ack, say, command, event, respond):
         """
-        Bolt App callback for when the user types /test_get_images into the
+        Bolt App callback for when the user types /test_get_images_2 into the
         app. This will store that the user requested images. Then, the next
         time the robot pulls updates from the Flask App, it will indicate to
         the robot to send images. The robot will then send images to the
@@ -571,7 +572,7 @@ class FlaskSlackbot(object):
         """
         # Acknowledge the command
         ack()
-        print("test_get_images", ack, say, command, event, respond)
+        print("test_get_images_2", ack, say, command, event, respond)
         # Store that the user requested images.
         user_id = command["user_id"]
         self.sent_messages_database.add_user_send_image_time(user_id, time.time())
