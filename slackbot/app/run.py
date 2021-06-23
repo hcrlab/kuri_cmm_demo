@@ -184,7 +184,7 @@ class FlaskSlackbot(object):
             image_ids.append(image_id)
         return image_ids
 
-    def send_image_to_slack(self, image_id, direct_link, user_id, image_description):
+    def send_image_to_slack(self, image_id, direct_link, user_id, image_description, message_i):
         """
         Actually sends the Slack message. Returns a boolean indicating whether
         the send was succesful or not.
@@ -258,11 +258,13 @@ class FlaskSlackbot(object):
             image_descriptions = [None for _ in range(len(image_ids))]
 
         # Send the first message
+        # Check which message this is
+        message_i = 0
         image_id = image_ids.pop(0)
         direct_link = image_urls.pop(0)
         image_description = image_descriptions.pop(0)
         user_id = self.users[user]
-        send_result = self.send_image_to_slack(image_id, direct_link, user_id, image_description)
+        send_result = self.send_image_to_slack(image_id, direct_link, user_id, image_description, message_i)
 
         # Update the images to send
         self.sent_messages_database.set_remaining_images_to_send(user_id, image_ids, image_urls, image_descriptions)
@@ -420,11 +422,10 @@ class FlaskSlackbot(object):
         payload = intro_template(2,command["user_id"])
         response = self.slack_app.client.chat_postMessage(**payload)
 
-        #Edited replication of send_image for Lee's playpen
+        #Edited replication of send_image for Lee's plaype
         # Decode the request
         images_bytes = []
-        # print("request.json['images']", request.json['images'], len(request.json['images']))
-        #replacing request.json with a list of images_bytes
+        #replacing request.json with a list of images_filepaths
         """
         for i in range(len(request.json['images'])):
             image = request.json['images'][i]
@@ -437,6 +438,7 @@ class FlaskSlackbot(object):
             image = image_filepaths[i]
             image_bytes = base64.decodebytes(image.encode('ascii')) # image.encode("utf-8") #
             images_bytes.append(image_bytes)
+            print(image_bytes)
         #user is from command, make sure to fix.
         user = command["user_id"]
 
@@ -468,7 +470,7 @@ class FlaskSlackbot(object):
             image_descriptions = [None for _ in range(len(image_ids))]
         """
         image_descriptions = [None for _ in range(len(image_ids))]
-        
+
         # Send the first message
         image_id = image_ids.pop(0)
         direct_link = image_urls.pop(0)
