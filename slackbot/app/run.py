@@ -194,6 +194,12 @@ class FlaskSlackbot(object):
         payload = post_image(user_id, direct_link, image_description)
         # Send the image
         response = self.slack_app.client.chat_postMessage(**payload)
+        if not response["ok"]:
+            logging.info("Error sending file to user %s %s" % (user_id, response))
+            return False
+        ts = response["message"]["ts"]
+        self.sent_messages_database.add_sent_message(image_id, user_id, ts)
+        self.database_updated()
 
         payload = post_message(user_id, message_i, condition)
         # Next, send the message
