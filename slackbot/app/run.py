@@ -11,7 +11,7 @@ import random
 import requests
 from sent_messages_database import SentMessagesDatabase
 from slack_bolt import App
-from slack_templates import slack_template_1, intro_template, post_image, post_message, action_button_check_mark_or_x, confirm_input, end_block_template
+from slack_templates import slack_template_1, intro_template, post_image, post_message, action_button_check_mark_or_x, confirm_input_template, end_block_template
 import string
 import sys
 import threading
