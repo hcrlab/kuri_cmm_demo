@@ -77,6 +77,82 @@ Types of messages to expect:
     Final message for final survey
         Assuming that final survey is different from end of day survey
 """
+def pre_Kuri_template(user_id, user_name):
+    payload = {
+        "ts": "",
+        "channel": user_id,
+        "username": "kuribot",
+        "text": "Hi, it's Kuribot! I'm checking in before the study starts with some important information",
+        "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "First off, I want to confrim that I have the right account. Are you "+ user_name+ " who signed up for a study?"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "If so, then I've got the right person! If not, please contact the researchers who run this study at cmavro@cs.Washington.edu"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text":  "Just as a reminder, I'm going to be sending you pictures of objects that I think you will like in the Gates Center. I'm looking forward to sending you some pictures!"
+            }
+        }
+    ],
+    }
+    return payload
+
+def pre_research_template(user_id, user_name):
+    payload = {
+        "ts": "",
+        "channel": user_id,
+        "username": "kuri_researcher",
+        "text": "Hi, it's a researcher from the Kuribot study. I'm checking in before the study starts with some important information",
+        "blocks": [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Now that you've heard from Kuri, I just wanted to tell you more about the study you've signed up for."
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "You will be reciving images from Kuri as it wanders around the Gates Center. This will continue for three days."
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Each day at 9 AM you will receive an intro message from Kuri, to let you know that it has started. You will then receive four sets of images: at 10AM, 12PM, 2PM, and 4PM. These images are things that Kuri thinks you might like."
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Kuri will ask you for feedback, but you can decied whether or not to respond to Kuri's requests for feedback. At 4:45PM each study day, you willl receive a link to a survey. To complete the study and recieve full compensation, you must fill out all three surveys"
+            }
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Ok, that's it. If you have any questions, or you have recieved these messages without signing up, please contact cmavro@cs.Washington.edu. We hope you enjoy interacting with Kuri!"
+            }
+        },
+    ]
+    }
 def intro_template(day, user_id):
     #The intro message accepts an int that describes what day the participant is on
     #Expected values: 0-2
@@ -384,10 +460,35 @@ def end_block_template(user_id):
     }
     return payload
 
-def closing_template(user_id, random_id):
+def closing_day_template(user_id, random_id):
     #The study URL will need to be changed for the final version, but here's the temp one for testing
     #random_id will be generated beforehand and added to a dictionary to keep track of who got what random_id
     study_url = "https://ucsantacruz.co1.qualtrics.com/jfe/form/SV_9uV0VU7U2epEviu?random_id="
+    #random_id = random.randomrange(100000,999999)
+
+    payload = {
+        "ts": "",
+        "channel": user_id,
+        "username": "kuribot",
+        "icon_emoji": ":robot_face:",
+        "text": "Hi, it's Kuribot! We are almost done",
+        "blocks": [
+    	{
+    		"type": "section",
+    		"text": {
+    			"type": "mrkdwn",
+    			"text": "Thank you for responding to all the pictures, you've really helped me out. Before you finish up, please go to this URL:"+ study_url + str(random_id)+" to complete a survey and finish for today"
+    	           }
+        }
+        ]
+    }
+    return payload
+
+def closing_study_template(user_id, random_id):
+    #The study URL will need to be changed for the final version, but here's the temp one for testing
+    #random_id will be generated beforehand and added to a dictionary to keep track of who got what random_id
+
+    study_url = "https://ucsantacruz.co1.qualtrics.com/jfe/form/SV_9uV0VU7U2epEviu?random_id=" #Different URL for day survey vs end of study survey
     #random_id = random.randomrange(100000,999999)
 
     payload = {

@@ -11,7 +11,7 @@ import random
 import requests
 from sent_messages_database import SentMessagesDatabase
 from slack_bolt import App
-from slack_templates import slack_template_1, intro_template, post_image, post_message, action_button_check_mark_or_x, confirm_input_template, end_block_template
+import slack_templates 
 import string
 import sys
 import threading
@@ -54,7 +54,7 @@ class FlaskSlackbot(object):
         self.slack_app.action("action_id_check_mark")(self.action_button_check_mark)
         self.slack_app.action("action_id_x")(self.action_button_x)
         self.slack_app.action("confirm_input")(self.confirm_input)
-        self.slack_app.command("/test_get_images_2")(self.test_get_images_2)
+        self.slack_app.command("/test_get_images")(self.test_get_images)
         #self.slack_app.command("/start_kuri")(self.start_kuri)
 
         # Store the Slack users
@@ -193,7 +193,10 @@ class FlaskSlackbot(object):
         #Replace here the original slack_template with my new one
         #payload = slack_template_1(user_id, direct_link, image_description)
         payload = post_image(user_id, direct_link, message_i, image_description)
-        # Send the image
+        """
+        Send the image. Since trying to send two posts (one as the image and one as the message) was running
+        into issues with logging them in the database, I've merged them together
+        """
         response = self.slack_app.client.chat_postMessage(**payload)
         if not response["ok"]:
             logging.info("Error sending file to user %s %s" % (user_id, response))
@@ -493,9 +496,9 @@ class FlaskSlackbot(object):
         if image_id is not None:
             self.send_image_to_slack(image_id, direct_link, user_id, message_i, image_description)
 
-    def test_get_images_2(self, ack, say, command, event, respond):
+    def test_get_images(self, ack, say, command, event, respond):
         """
-        Bolt App callback for when the user types /test_get_images_2 into the
+        Bolt App callback for when the user types /test_get_images into the
         app. This will store that the user requested images. Then, the next
         time the robot pulls updates from the Flask App, it will indicate to
         the robot to send images. The robot will then send images to the
@@ -503,7 +506,7 @@ class FlaskSlackbot(object):
         """
         # Acknowledge the command
         ack()
-        print("test_get_images_2", ack, say, command, event, respond)
+        print("test_get_images", ack, say, command, event, respond)
         # Store that the user requested images.
         user_id = command["user_id"]
         self.sent_messages_database.add_user_send_image_time(user_id, time.time())
