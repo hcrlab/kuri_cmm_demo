@@ -141,7 +141,7 @@ def pre_research_template(user_id, user_name):
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "Kuri will ask you for feedback, but you can decied whether or not to respond to Kuri's requests for feedback. At 4:45PM each study day, you willl receive a link to a survey. To complete the study and recieve full compensation, you must fill out all three surveys"
+                "text": "Kuri will ask you for feedback, but you can decied whether or not to respond to Kuri's requests for feedback. Don't worry, it won't hurt Kuri's feelings if you don't respond. At 4:45PM each study day, you willl receive a link to a survey. To complete the study and recieve full compensation, you must fill out all three surveys"
             }
         },
         {
